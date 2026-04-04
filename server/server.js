@@ -15,14 +15,25 @@ const io = new Server(server, {
   },
 });
 
+// ✅ Make io globally accessible
+global.io = io;
+
 // 🔥 SOCKET LOGIC
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
+  // whiteboard rooo,
   socket.on("join-board", (boardId) => {
     socket.join(boardId);
   });
 
+   // ✅ User personal room (for notifications)
+  socket.on("join-user", (userId) => {
+    socket.join(userId);
+    console.log("User joined room:", userId);
+  });
+
+  // shape async
   socket.on("shape:create", ({ boardId, shape }) => {
     socket.to(boardId).emit("shape:created", shape);
   });

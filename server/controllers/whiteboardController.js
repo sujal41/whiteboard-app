@@ -71,7 +71,9 @@ exports.getWhiteboardById = async (req, res) => {
         { owner: userId },
         { collaborators: userId },
       ],
-    }).populate("collaborators", "name email");
+    })
+    .populate("collaborators", "name email")
+    .populate("owner", "name email");
 
     if (!board) {
       return res.status(404).json({ message: "Whiteboard not found" });
@@ -122,6 +124,12 @@ exports.addCollaborator = async (req, res) => {
       return res.status(404).json({ message: "Board not found" });
     }
 
+    // check if this user is owner or not, then only allow to add others
+    console.log("compare: ",board.owner, " - ", req.user.id)
+    if(board.owner.toString() !== req.user.id){
+      return res.status(401).json({ message: "Only Owner can add other users !" });
+    }
+
     // avoid duplicates
     if (board.collaborators.includes(userId)) {
       return res.status(400).json({ message: "User already added" });
@@ -130,10 +138,18 @@ exports.addCollaborator = async (req, res) => {
     board.collaborators.push(userId);
     await board.save();
 
-    res.json({ message: "User invited", board });
+    // 🔥 SEND SOCKET NOTIFICATION
+    const io = global.io;
 
+    io.to(userId).emit("notification", {
+      type: "INVITE",
+      boardId: board._id,
+      boardTitle: board.title,
+      message: `You were invited to ${board.title}`,
+    });
 
-    res.json({ board });
+    return res.json({ message: "User invited", board });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -147,6 +163,12 @@ exports.removeCollaborator = async (req, res) => {
 
     if (!board) {
       return res.status(404).json({ message: "Board not found" });
+    }
+
+    // check if this user is owner or not, then only allow to add others
+    console.log("compare: ",board.owner, " - ", req.user.id)
+    if(board.owner.toString() !== req.user.id){
+      return res.status(401).json({ message: "Only Owner can remove collaborators !" });
     }
 
     // check if user exists in collaborators

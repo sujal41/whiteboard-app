@@ -4,7 +4,8 @@ function InviteUsers({
   users,
   inviteUser,
   collaborators,
-  setBoardCollaborators
+  setBoardCollaborators,
+  fetchBoard
 }) {
   const [open, setOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -21,6 +22,7 @@ function InviteUsers({
       // reset UI
       setOpen(false);
       setSelectedUser(null);
+      await fetchBoard();
     } catch (err) {
       console.error(err);
     }

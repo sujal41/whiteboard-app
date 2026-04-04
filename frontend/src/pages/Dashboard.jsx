@@ -3,6 +3,7 @@ import { AuthContext } from "../context/AuthContext";
 import { useState } from "react";
 import API from "../api/axios";
 import { useNavigate } from "react-router-dom";
+import socket from "../socket";
 
 export default function Dashboard() {
   const { user, logout } = useContext(AuthContext);
@@ -11,7 +12,9 @@ export default function Dashboard() {
     const [title, setTitle] = useState("");
     const [boards, setBoards] = useState([]);
     const [invitedBoards, setInvitedBoards] = useState([]);
-    const [boardUpdated, setBoardUpdated] = useState(true);
+    // const [boardUpdated, setBoardUpdated] = useState(true);
+    const [toasts, setToasts] = useState([]);
+     const [notifications, setNotifications] = useState([]);
 
     const navigate = useNavigate();
 
@@ -49,17 +52,71 @@ export default function Dashboard() {
             console.error(error.response?.data || error.message);
         }
     };
-    
+
     useEffect(() => {
 
         fetchBoards();
         fetchInvitedBoards();
     }, []);
 
+
+    useEffect(() => {
+        socket.on("notification", (data) => {
+            const id = Date.now();
+
+            const newToast = { ...data, id };
+
+            console.log("on notification data:", data);
+             setNotifications((prev) => [...prev, data]);
+            setToasts((prev) => [...prev, newToast]);
+
+            // auto remove after 5 seconds
+            setTimeout(() => {
+                setToasts((prev) => prev.filter((t) => t.id !== id));
+            }, 5000);
+        });
+
+        return () => {
+        socket.off("notification");
+        };
+    }, []);
+
+    const handleClick = (toast) => {
+        navigate(`/whiteboard/${toast.boardId}`);
+    };
+
     
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
+        <div>
+      <h2>Notifications</h2>
+
+      {notifications.map((n, i) => (
+        <div
+          key={i}
+          onClick={() => navigate(`/whiteboard/${n.boardId}`)}
+          className="p-3 bg-gray-100 rounded cursor-pointer mb-2 hover:bg-gray-200"
+        >
+          {n.message}
+        </div>
+      ))}
+    </div>
+        {/* 🔔 Toast Container */}
+      <div className="fixed top-5 right-5 space-y-3 z-50">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            onClick={() => handleClick(toast)}
+            className="bg-white shadow-lg border rounded-lg p-4 w-72 cursor-pointer hover:shadow-xl transition"
+          >
+            <p className="text-sm font-medium">{toast.message}</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Click to open board
+            </p>
+          </div>
+        ))}
+      </div>
 
         {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
@@ -106,7 +163,10 @@ export default function Dashboard() {
         </h1>
 
         <button
-          onClick={logout}
+          onClick={ () => {
+            logout();
+            navigate("/");
+        }}
           className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
         >
           Logout
@@ -166,8 +226,10 @@ export default function Dashboard() {
             )}
         </div>
 
-        <div className="mt-6 bg-white p-6 rounded-xl shadow flex flex-col items-center justify-center text-center">
-            Invited Whiteboards
+        <div className="mt-6 bg-white p-6 rounded-xl shadow">
+            <h2 className="text-lg font-semibold mb-4">
+                Invited Whiteboards
+            </h2>
 
             {invitedBoards.length === 0 ? (
                 <p className="text-gray-500 text-sm">
@@ -175,27 +237,25 @@ export default function Dashboard() {
                 </p>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                
                 {invitedBoards.map((board) => (
                     <div
                     key={board._id}
                     onClick={() => navigate(`/whiteboard/${board._id}`)}
                     className="bg-white p-4 rounded-xl shadow hover:shadow-md transition cursor-pointer"
                     >
-                    <h3 className="font-semibold text-gray-800 truncate">
+                    <h3 className="font-semibold text-gray-800 truncate text-left">
                         {board.title}
                     </h3>
 
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 mt-1 text-left">
                         Created: {new Date(board.createdAt).toLocaleDateString()}
                     </p>
                     </div>
                 ))}
-
                 </div>
             )}
-        </div>
+            </div>
 
-    </div>
+        </div>
   );
 }

@@ -29,6 +29,10 @@ export default function Canvas({
     }
   }, [selectedId]);
 
+  useEffect(() => {
+    socket.emit("join-board", id);
+    }, [id]);
+
   // 🖱️ START DRAW
   const handleMouseDown = (e) => {
     const clickedOnEmpty = e.target === e.target.getStage();

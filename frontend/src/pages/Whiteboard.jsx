@@ -1,6 +1,7 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 import API from "../api/axios";
+import { ArrowLeft } from "lucide-react";
 
 import Toolbar from "../components/Toolbar";
 import Canvas from "../components/Canvas";
@@ -14,20 +15,17 @@ export default function Whiteboard() {
   const { id } = useParams();
   const { user, logout } = useContext(AuthContext);
 
+  const navigate = useNavigate();
+
   const [board, setBoard] = useState(null);
   const [boardCollaborators, setBoardCollaborators] = useState([])
   const [shapes, setShapes] = useState([]);
   const [tool, setTool] = useState("rect"); // rect | circle | line
   const [selectedId, setSelectedId] = useState(null);
-    const [users, setUsers] = useState([]);
+const [users, setUsers] = useState([]);
 
   
 
-    useEffect(() => {
-        socket.emit("join-board", id);
-    }, [id]);
-
-  useEffect(() => {
     const fetchBoard = async () => {
       try {
         const res = await API.get(`/whiteboard/${id}`);
@@ -52,10 +50,17 @@ export default function Whiteboard() {
             console.error(err.response?.data || err.message);
         }
     };
-    console.log("user: ", user);
-    fetchBoard();
-    fetchShapes();
-  }, [id]);
+
+    useEffect(() => {
+        socket.emit("join-board", id);
+    }, [id]);
+
+    useEffect(() => {
+        
+        console.log("user: ", user);
+        fetchBoard();
+        fetchShapes();
+    }, [id]);
 
   useEffect(() => {
     socket.on("shape:created", (shape) => {
@@ -100,6 +105,7 @@ export default function Whiteboard() {
 
             alert("User invited!");
         } catch (err) {
+            if(err?.response?.data?.message) alert(err?.response?.data?.message);
             console.error(err);
         }
     };
@@ -166,6 +172,15 @@ export default function Whiteboard() {
   return (
     <div className="min-h-screen bg-gray-100 p-4 overflow-x-hidden">
       
+       <button
+      onClick={() => navigate("/dashboard")}
+      className="top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 rounded-xl 
+                 bg-white shadow-md hover:shadow-lg transition 
+                 text-gray-700 hover:text-black border border-gray-200"
+    >
+      <ArrowLeft size={18} />
+      <span className="text-sm font-medium">Back</span>
+    </button>
       {/* Header */}
       {/* Header */}
 <div className="bg-white p-4 rounded-xl shadow mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -176,7 +191,7 @@ export default function Whiteboard() {
       {board ? board.title : "Loading..."}
     </h1>
     <p className="text-sm text-gray-500">
-      Whiteboard
+      Whiteboard (Owned By {board?.owner._id === user.id ? "You" : board?.owner.name})
     </p>
   </div>
 
@@ -206,13 +221,14 @@ export default function Whiteboard() {
                     collaborators={board.collaborators}
                     board={board}
                     setBoard={setBoard}
+                    fetchBoard={fetchBoard}
                 />
                 )}
             </div>
 
             {/* Right side */}
             <div className="w-full sm:w-auto flex sm:justify-end">
-                <InviteUsers users={users} inviteUser={inviteUser} board={board} collaborators={boardCollaborators} setBoardCollaborators={setBoardCollaborators} />
+                <InviteUsers users={users} inviteUser={inviteUser} board={board} collaborators={boardCollaborators} setBoardCollaborators={setBoardCollaborators} fetchBoard={fetchBoard} />
             </div>
 
         </div>

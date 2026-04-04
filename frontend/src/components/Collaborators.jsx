@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import API from "../api/axios";
 
-const Collaborators = ({ collaborators, setBoard, board }) => {
+const Collaborators = ({ collaborators, setBoard, board, fetchBoard }) => {
   const [open, setOpen] = useState(false);
 
   const handleRemoveCollaborator = async (userId) => {
@@ -17,7 +17,12 @@ const Collaborators = ({ collaborators, setBoard, board }) => {
           (u) => u._id !== userId
         ),
       }));
+
+      await fetchBoard()
     } catch (err) {
+        // console.log(err.response)
+        // console.log(err)
+        if(err?.response?.data?.message) alert(err?.response?.data?.message);
       console.error(err);
     }
   };
