@@ -138,3 +138,32 @@ exports.addCollaborator = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.removeCollaborator = async (req, res) => {
+  try {
+    const { boardId, userId } = req.body;
+
+    const board = await Whiteboard.findById(boardId);
+
+    if (!board) {
+      return res.status(404).json({ message: "Board not found" });
+    }
+
+    // check if user exists in collaborators
+    if (!board.collaborators.includes(userId)) {
+      return res.status(400).json({ message: "User not a collaborator" });
+    }
+
+    // remove user
+    board.collaborators = board.collaborators.filter(
+      (id) => id.toString() !== userId
+    );
+
+    await board.save();
+
+    res.json({ message: "User removed", board });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

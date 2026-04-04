@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import API from "../api/axios";
 
 import Toolbar from "../components/Toolbar";
@@ -7,11 +7,15 @@ import Canvas from "../components/Canvas";
 
 import socket from "../socket";
 import Collaborators from "../components/Collaborators";
+import InviteUsers from "../components/InviteUsers";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Whiteboard() {
   const { id } = useParams();
+  const { user, logout } = useContext(AuthContext);
 
   const [board, setBoard] = useState(null);
+  const [boardCollaborators, setBoardCollaborators] = useState([])
   const [shapes, setShapes] = useState([]);
   const [tool, setTool] = useState("rect"); // rect | circle | line
   const [selectedId, setSelectedId] = useState(null);
@@ -29,6 +33,7 @@ export default function Whiteboard() {
         const res = await API.get(`/whiteboard/${id}`);
         console.log("this board: ", res.data.board)
         setBoard(res.data.board);
+        setBoardCollaborators(res.data.board.collaborators);
       } catch (err) {
         console.error(err.response?.data || err.message);
       }
@@ -47,7 +52,7 @@ export default function Whiteboard() {
             console.error(err.response?.data || err.message);
         }
     };
-
+    console.log("user: ", user);
     fetchBoard();
     fetchShapes();
   }, [id]);
@@ -90,7 +95,7 @@ export default function Whiteboard() {
     const inviteUser = async (userId) => {
         try {
             await API.post(`/whiteboard/${id}/invite`, {
-            userId,
+                userId,
             });
 
             alert("User invited!");
@@ -159,28 +164,58 @@ export default function Whiteboard() {
     };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
+    <div className="min-h-screen bg-gray-100 p-4 overflow-x-hidden">
       
       {/* Header */}
-      <div className="bg-white p-4 rounded-xl shadow mb-4">
-        <h1 className="text-xl font-bold">
-          {board ? board.title : "Loading..."}
-        </h1>
-        
-      </div>
+      {/* Header */}
+<div className="bg-white p-4 rounded-xl shadow mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
 
-      {board?.collaborators && (
-            <Collaborators collaborators={board.collaborators} />
-        )}
+  {/* Left: Board Title */}
+  <div>
+    <h1 className="text-2xl font-bold text-gray-800">
+      {board ? board.title : "Loading..."}
+    </h1>
+    <p className="text-sm text-gray-500">
+      Whiteboard
+    </p>
+  </div>
 
-      <select onChange={(e) => inviteUser(e.target.value)}>
-        <option>invite user</option>
-        {users.map((user) => (
-            <option key={user._id} value={user._id}>
-            {user.name}
-            </option>
-        ))}
-        </select>
+  {/* Right: User Info */}
+  <div className="flex items-center gap-2">
+    <div className="text-right">
+      <p className="text-sm text-gray-500">Logged in as</p>
+      <p className="font-semibold text-gray-800">
+        {user?.name}
+      </p>
+    </div>
+
+    {/* Avatar */}
+    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+      {user?.name?.charAt(0)?.toUpperCase()}
+    </div>
+  </div>
+
+</div>
+
+      <div className="flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-3 p-3.5">
+
+            {/* Left side */}
+            <div className="w-full sm:w-auto">
+                {board?.collaborators && (
+                <Collaborators
+                    collaborators={board.collaborators}
+                    board={board}
+                    setBoard={setBoard}
+                />
+                )}
+            </div>
+
+            {/* Right side */}
+            <div className="w-full sm:w-auto flex sm:justify-end">
+                <InviteUsers users={users} inviteUser={inviteUser} board={board} collaborators={boardCollaborators} setBoardCollaborators={setBoardCollaborators} />
+            </div>
+
+        </div>
 
       {/* Toolbar */}
       <Toolbar
