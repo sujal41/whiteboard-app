@@ -5,7 +5,10 @@ const jwt = require("jsonwebtoken");
 // 🔹 Generate JWT
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user._id, email: user.email },
+    { 
+      id: user._id, 
+      // email: user.email 
+    },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
@@ -43,7 +46,9 @@ exports.signup = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    // res.status(500).json({ message: error.message });
+    console.log(err);
+    return res.status(500).json({ message: "something went wrong ! please try again later." });
   }
 };
 
@@ -75,6 +80,8 @@ exports.login = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    // res.status(500).json({ message: error.message });
+    console.log(err);
+    return res.status(500).json({ message: "something went wrong ! please try again later." });
   }
 };

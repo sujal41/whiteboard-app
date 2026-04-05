@@ -77,12 +77,15 @@ export default function Dashboard() {
         });
 
         return () => {
-        socket.off("notification");
+            socket.off("notification");
         };
     }, []);
 
     const handleClick = (toast) => {
         navigate(`/whiteboard/${toast.boardId}`);
+    };
+    const dismissToast = (id) => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
     };
 
     
@@ -110,6 +113,16 @@ export default function Dashboard() {
             onClick={() => handleClick(toast)}
             className="bg-white shadow-lg border rounded-lg p-4 w-72 cursor-pointer hover:shadow-xl transition"
           >
+            {/* ❌ Close Button */}
+            <button
+                onClick={(e) => {
+                e.stopPropagation(); // prevent opening board
+                dismissToast(toast.id);
+                }}
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-sm"
+            >
+                ✕
+            </button>
             <p className="text-sm font-medium">{toast.message}</p>
             <p className="text-xs text-gray-400 mt-1">
               Click to open board

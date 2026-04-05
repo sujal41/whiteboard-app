@@ -1,14 +1,22 @@
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { WhiteBoardContext } from "../context/WhiteBoardContext";
+import API from "../api/axios";
 
 function InviteUsers({
-  users,
   inviteUser,
-  collaborators,
-  setBoardCollaborators,
   fetchBoard
 }) {
+    const { collaborators, setCollaborators } = useContext(WhiteBoardContext);
   const [open, setOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  const [users, setUsers] = useState([]);
+
+  const getUsers = async() => {
+    const res = await API.get("/users");
+    console.log("got users: ", res?.data?.users)
+    setUsers(res?.data?.users || []);
+}
 
   const handleInvite = async () => {
     if (!selectedUser) return;
@@ -17,7 +25,7 @@ function InviteUsers({
       await inviteUser(selectedUser._id);
 
       // ✅ update local state immediately
-      setBoardCollaborators((prev) => [...prev, selectedUser]);
+      setCollaborators((prev) => [...prev, selectedUser]);
 
       // reset UI
       setOpen(false);
@@ -27,6 +35,10 @@ function InviteUsers({
       console.error(err);
     }
   };
+
+  useEffect(() =>{
+    getUsers();
+  }, [open]);
 
   return (
     <div className="relative inline-block">

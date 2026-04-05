@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import API from "../api/axios";
+import { WhiteBoardContext } from "../context/WhiteBoardContext";
 
-const Collaborators = ({ collaborators, setBoard, board, fetchBoard }) => {
+const Collaborators = ({ fetchBoard }) => {
+    const { board, setBoard, collaborators } = useContext(WhiteBoardContext);
   const [open, setOpen] = useState(false);
 
   const handleRemoveCollaborator = async (userId) => {

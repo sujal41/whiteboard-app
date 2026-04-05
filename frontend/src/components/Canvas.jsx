@@ -1,8 +1,9 @@
 import { Stage, Layer, Rect, Circle, Transformer, Line } from "react-konva";
-import { useRef, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useRef, useEffect, useState, useContext } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import API from "../api/axios";
 import socket from "../socket";
+import { WhiteBoardContext } from "../context/WhiteBoardContext";
 
 export default function Canvas({
   shapes,
@@ -14,6 +15,10 @@ export default function Canvas({
 }) {
   const shapeRef = useRef();
   const trRef = useRef();
+
+  const navigate = useNavigate();
+
+  const { board } = useContext(WhiteBoardContext);
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [newShape, setNewShape] = useState(null);
@@ -120,9 +125,16 @@ export default function Canvas({
 
 
     try {
-      await API.post("/shapes", finalShape);
+      await API.post("/shapes", finalShape );
     } catch (err) {
       console.error(err.response?.data || err.message);
+      if(err?.response?.data?.code === "REDIRECT_DASHBOARD") {
+        alert(err?.response?.data?.message);
+        // navigate to dashboard , this user don't have access to this board
+        navigate("/dashboard");
+      }else{
+        alert(err?.response?.data?.message);
+      }
     }
 
     // 🔥 SOCKET EMIT (HERE)

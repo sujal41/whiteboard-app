@@ -69,8 +69,8 @@ const ShapeSchema = new mongoose.Schema(
 );
 
 // 🔥 Critical indexes for performance
-ShapeSchema.index({ whiteboardId: 1 });
-ShapeSchema.index({ shapeId: 1 });
+// ShapeSchema.index({ whiteboardId: 1 });
+// ShapeSchema.index({ shapeId: 1 });
 ShapeSchema.index({ whiteboardId: 1, shapeId: 1 });
 
 module.exports = mongoose.model("Shape", ShapeSchema);

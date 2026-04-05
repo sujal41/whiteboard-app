@@ -17,9 +17,63 @@ exports.createWhiteboard = async (req, res) => {
       board,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    // res.status(500).json({ message: error.message });
+    console.log(err);
+    return res.status(500).json({ message: "something went wrong ! please try again later." });
   }
 };
+
+// 🔹 RENAME WHITEBOARD NAME
+exports.renameWhiteboardTitle = async (req, res) => {
+  try {
+    const boardId = req.params.boardId;
+    const { title } = req.body;
+    const userId = req.user.id;
+
+    console.log(boardId, title, userId);
+
+    // 🔒 Validate title
+    if (!title || !title.trim()) {
+      return res.status(400).json({
+        message: "Title cannot be empty",
+      });
+    }
+
+      // 🔍 Find & update (only if user is owner)
+    const updatedBoard = await Whiteboard.findOneAndUpdate(
+      {
+        _id: boardId,
+        owner: userId, // ✅ ensures only owner can rename
+      },
+      {
+        title: title.trim(),
+      },
+      {
+        new: true, // return updated doc
+      }
+    );
+
+    // ❌ Board not found or not allowed
+    if (!updatedBoard) {
+      return res.status(404).json({
+        message: "Board not found or unauthorized",
+      });
+    }
+
+    // see if whiteboard exists 
+    // update it useing findoneand updated
+
+    return res.status(200).json({
+      message: "board title rename successfully"
+    });
+  } catch (error) {
+    // res.status(500).json({ message: error.message });
+    console.log(err);
+    return res.status(500).json({ message: "something went wrong ! please try again later." });
+  }
+};
+
+
 
 // 🔹 GET USER WHITEBOARDS
 exports.getWhiteboards = async (req, res) => {
@@ -38,7 +92,9 @@ exports.getWhiteboards = async (req, res) => {
       boards,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    // res.status(500).json({ message: error.message });
+    console.log(err);
+    return res.status(500).json({ message: "something went wrong ! please try again later." });
   }
 };
 
@@ -51,11 +107,13 @@ exports.getInvitedWhiteboards = async (req, res) => {
         collaborators: userId ,
     }).sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       boards,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    // return res.status(500).json({ message: error.message });
+    console.log(err);
+    return res.status(500).json({ message: "something went wrong ! please try again later." });
   }
 };
 
@@ -65,7 +123,22 @@ exports.getWhiteboardById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const board = await Whiteboard.findOne({
+    const board = await this.getWhiteboardByIdFromDb(id, userId);
+
+    if (!board) {
+      return res.status(404).json({ message: "Whiteboard not found" });
+    }
+
+    res.status(200).json({ board });
+  } catch (error) {
+    // res.status(500).json({ message: error.message });
+    console.log(err);
+    return res.status(500).json({ message: "something went wrong ! please try again later." });
+  }
+};
+
+exports.getWhiteboardByIdFromDb = async( id, userId ) => {
+  const board = await Whiteboard.findOne({
       _id: id,
       $or: [
         { owner: userId },
@@ -75,43 +148,35 @@ exports.getWhiteboardById = async (req, res) => {
     .populate("collaborators", "name email")
     .populate("owner", "name email");
 
-    if (!board) {
-      return res.status(404).json({ message: "Whiteboard not found" });
-    }
-
-    res.status(200).json({ board });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
+  return board;
+}
 
 // 🔹 CREATE SHAPE
-exports.createShape = async (req, res) => {
-  try {
-    const shape = await Shape.create({
-      ...req.body,
-      user: req.user.id,
-    });
+// exports.createShape = async (req, res) => {
+//   try {
+//     const shape = await Shape.create({
+//       ...req.body,
+//       user: req.user.id,
+//     });
 
-    res.status(201).json({ shape });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+//     res.status(201).json({ shape });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
-// 🔹 GET SHAPES BY WHITEBOARD
-exports.getShapes = async (req, res) => {
-  try {
-    const { whiteboardId } = req.params;
+// // 🔹 GET SHAPES BY WHITEBOARD
+// exports.getShapes = async (req, res) => {
+//   try {
+//     const { whiteboardId } = req.params;
 
-    const shapes = await Shape.find({ whiteboard: whiteboardId });
+//     const shapes = await Shape.find({ whiteboard: whiteboardId });
 
-    res.status(200).json({ shapes });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+//     res.status(200).json({ shapes });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
 exports.addCollaborator = async (req, res) => {
   try {
@@ -151,7 +216,9 @@ exports.addCollaborator = async (req, res) => {
     return res.json({ message: "User invited", board });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    // res.status(500).json({ message: err.message });
+    console.log(err);
+    return res.status(500).json({ message: "something went wrong ! please try again later." });
   }
 };
 
@@ -159,6 +226,7 @@ exports.removeCollaborator = async (req, res) => {
   try {
     const { boardId, userId } = req.body;
 
+    console.log(boardId, userId)
     const board = await Whiteboard.findById(boardId);
 
     if (!board) {
@@ -183,9 +251,20 @@ exports.removeCollaborator = async (req, res) => {
 
     await board.save();
 
-    res.json({ message: "User removed", board });
+    // emmiting event to redirect user to dashboard if he is in the whiteboard
+    const io = global.io;
+
+    io.to(userId).emit("board:removed", {
+      boardId,
+      message: `You were removed from ${board.title}`,
+    });
+
+
+    return res.json({ message: "User removed", board });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    // return res.status(500).json({ message: err.message });
+    console.log(err);
+    return res.status(500).json({ message: "something went wrong ! please try again later." });
   }
 };
