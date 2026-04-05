@@ -54,6 +54,7 @@ export default function Whiteboard() {
 
             setShapes(normalized);
         } catch (err) {
+            alert(err?.response?.data?.message || "something went wrong!");
             console.error(err.response?.data || err.message);
         }
     };
@@ -205,103 +206,152 @@ export default function Whiteboard() {
     };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 overflow-x-hidden">
-      
-       <button
-      onClick={() => navigate("/dashboard")}
-      className="top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 rounded-xl 
-                 bg-white shadow-md hover:shadow-lg transition 
-                 text-gray-700 hover:text-black border border-gray-200"
-    >
-      <ArrowLeft size={18} />
-      <span className="text-sm font-medium">Back</span>
-    </button>
-      {/* Header */}
-      {/* Header */}
-    <div className="bg-white p-4 rounded-xl shadow mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-
-    {/* Left: Board Title */}
-    <div>
-        {isEditing ? (
+    <div className="h-screen bg-[#0a0a0f] text-white font-sans flex flex-col overflow-hidden">
+ 
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Syne:wght@700;800&display=swap');
+        body { font-family: 'DM Sans', sans-serif; }
+        .font-display { font-family: 'Syne', sans-serif; }
+        @keyframes fadeDown {
+          from { opacity:0; transform:translateY(-8px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .wb-in  { animation: fadeDown .4s ease both; }
+        .wb-in2 { animation: fadeDown .4s ease both .08s; }
+        .wb-in3 { animation: fadeDown .4s ease both .15s; }
+        .live-dot { animation: blink 1.8s ease-in-out infinite; }
+        .wb-title-input {
+          background: transparent;
+          border: none;
+          border-bottom: 1.5px solid rgba(78,205,196,0.55);
+          outline: none;
+          color: #fff;
+          font-family: 'Syne', sans-serif;
+          font-weight: 800;
+          font-size: clamp(14px, 2vw, 18px);
+          letter-spacing: -0.02em;
+          max-width: 260px;
+          padding: 1px 0;
+        }
+      `}</style>
+ 
+      {/* ── NAV ── */}
+      <nav className="wb-in flex items-center gap-2.5 px-3 sm:px-5 border-b border-white/[0.06] bg-[#0a0a0f]/90 backdrop-blur-xl z-40 flex-shrink-0 flex-wrap py-2 sm:py-0 sm:h-[58px]">
+ 
+        {/* Back */}
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white/55 bg-white/[0.05] border border-white/10 rounded-[9px] hover:text-white hover:border-white/20 hover:bg-white/[0.08] transition-all flex-shrink-0"
+        >
+          <ArrowLeft size={13} />
+          <span>Back</span>
+        </button>
+ 
+        <div className="w-px h-5 bg-white/[0.08] flex-shrink-0 hidden sm:block" />
+ 
+        {/* Logo mark */}
+        <div className="w-7 h-7 rounded-lg bg-[#4ECDC4]/10 border border-[#4ECDC4]/25 flex items-center justify-center flex-shrink-0">
+          <svg width="14" height="14" fill="none" stroke="#4ECDC4" strokeWidth="1.8" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="8" height="8" rx="1" />
+            <circle cx="17" cy="7" r="4" />
+            <path d="M3 17l4 4 8-8" />
+          </svg>
+        </div>
+ 
+        {/* Title */}
+        <div className="flex-1 min-w-0">
+          {isEditing ? (
             <input
-            autoFocus
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onBlur={() => setIsEditing(false)}
-            className="text-2xl font-bold text-gray-800 border-b outline-none"
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={() => setIsEditing(false)}
+              className="wb-title-input"
             />
-        ) : (
+          ) : (
             <h1
-            onDoubleClick={() => setIsEditing(true)}
-            className="text-2xl font-bold text-gray-800 cursor-pointer"
+              onDoubleClick={() => setIsEditing(true)}
+              title="Double-click to rename"
+              className="font-display font-extrabold text-sm sm:text-[17px] tracking-tight text-white truncate max-w-[200px] sm:max-w-xs cursor-text"
             >
-            {title || "Untitled Board"}
+              {title || "Untitled Board"}
             </h1>
-        )}
-
-        <p className="text-sm text-gray-500">
-            Whiteboard (Owned By{" "}
-            {board?.owner._id === user.id ? "You" : board?.owner.name})
-        </p>
-    </div>
-
-    {/* Right: User Info */}
-    <div className="flex items-center gap-2">
-        <div className="text-right">
-        <p className="text-sm text-gray-500">Logged in as</p>
-        <p className="font-semibold text-gray-800">
-            {user?.name}
-        </p>
+          )}
         </div>
-
-        {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-        {user?.name?.charAt(0)?.toUpperCase()}
+ 
+        {/* Owner badge */}
+        <span className="flex items-center gap-1 bg-[#FFE66D]/[0.08] border border-[#FFE66D]/15 rounded-md px-2 py-0.5 text-[11px] text-[#FFE66D] flex-shrink-0 hidden sm:flex">
+          <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          {board?.owner?._id === user?.id ? "Owner" : board?.owner?.name}
+        </span>
+ 
+        {/* Live dot */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="live-dot w-1.5 h-1.5 rounded-full bg-[#4ECDC4] inline-block" />
+          <span className="text-[11px] text-white/30 hidden sm:block">Live</span>
         </div>
-    </div>
-
-    </div>
-
-      <div className="flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-3 p-3.5">
-
-            {/* Left side */}
-            <div className="w-full sm:w-auto">
-                {board?.collaborators && (
-                <Collaborators
-                    fetchBoard={fetchBoard}
-                />
-                )}
-            </div>
-
-            {/* Right side */}
-            <div className="w-full sm:w-auto">
-                <InviteUsers inviteUser={inviteUser} fetchBoard={fetchBoard} />
-            </div>
-
+ 
+        <div className="w-px h-5 bg-white/[0.08] flex-shrink-0 hidden sm:block" />
+ 
+        {/* User */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="hidden sm:block text-right">
+            <p className="text-[10px] text-white/30 leading-none">Signed in as</p>
+            <p className="text-xs font-medium text-white/70 leading-snug">{user?.name}</p>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-[#4ECDC4]/15 border border-[#4ECDC4]/35 flex items-center justify-center font-display font-bold text-xs text-[#4ECDC4]">
+            {user?.name?.charAt(0)?.toUpperCase()}
+          </div>
         </div>
-
-      {/* Toolbar */}
-      <Toolbar
-        tool={tool}
-        setTool={setTool}
-        selectedId={selectedId}
-        shapes={shapes}
-        updateShape={updateShape}
-        deleteShape={deleteShape}
-        setShapes={setShapes}
-        setSelectedId={setSelectedId}
-      />
-
-      {/* Canvas */}
-      <Canvas
-        shapes={shapes}
-        setShapes={setShapes}
-        tool={tool}
-        selectedId={selectedId}
-        setSelectedId={setSelectedId}
-        updateShape={updateShape} // 🔥 add this
-      />
+      </nav>
+ 
+      {/* ── CONTROLS ROW ── */}
+      <div className="wb-in2 flex items-center justify-between gap-2 px-3 sm:px-5 py-2 border-b border-white/[0.05] bg-[#0a0a0f]/80 backdrop-blur-md z-30 flex-shrink-0 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          {board?.collaborators && <Collaborators fetchBoard={fetchBoard} />}
+          <div className="w-px h-4 bg-white/[0.08] hidden sm:block" />
+          <InviteUsers inviteUser={inviteUser} fetchBoard={fetchBoard} />
+        </div>
+        <div className="flex-shrink-0">
+          <Toolbar
+            tool={tool}
+            setTool={setTool}
+            selectedId={selectedId}
+            shapes={shapes}
+            updateShape={updateShape}
+            deleteShape={deleteShape}
+            setShapes={setShapes}
+            setSelectedId={setSelectedId}
+          />
+        </div>
+      </div>
+ 
+      {/* ── CANVAS ── */}
+      <div className="wb-in3 flex-1 relative overflow-hidden">
+        {/* Dot grid bg */}
+        <div
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+        <div className="relative z-10 w-full h-full">
+          <Canvas
+            shapes={shapes}
+            setShapes={setShapes}
+            tool={tool}
+            selectedId={selectedId}
+            setSelectedId={setSelectedId}
+            updateShape={updateShape}
+          />
+        </div>
+      </div>
     </div>
   );
 }

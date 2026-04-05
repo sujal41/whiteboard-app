@@ -57,7 +57,7 @@ export default function Canvas({
       setNewShape({
         ...base,
         points: [pos.x, pos.y, pos.x, pos.y],
-        stroke: "black",
+        stroke: "#FFFFFF",
         strokeWidth: 3,
         rotation: 0
       });
@@ -145,148 +145,119 @@ export default function Canvas({
   };
 
 
+  // NAV ~58px + CONTROLS ROW ~50px = 108px chrome
+  const CHROME = 108;
+  const [size, setSize] = useState({
+    width: window.innerWidth,
+    height: Math.max(300, window.innerHeight - CHROME),
+  });
+ 
+  useEffect(() => {
+    const update = () =>
+      setSize({
+        width: window.innerWidth,
+        height: Math.max(300, window.innerHeight - CHROME),
+      });
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+ 
   return (
-    <div className="bg-white rounded-xl shadow overflow-hidden">
+    <div
+      className="w-full h-full touch-none"
+      style={{ touchAction: "none" }}
+    >
       <Stage
-        width={window.innerWidth}
-        height={window.innerHeight - 180}
+        width={size.width}
+        height={size.height}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onTouchStart={handleMouseDown}
+        onTouchMove={handleMouseMove}
+        onTouchEnd={handleMouseUp}
       >
         <Layer>
-
+ 
           {shapes.map((shape) => {
             const commonProps = {
-            //   key: shape.shapeId,
               draggable: true,
               ref: selectedId === shape.shapeId ? shapeRef : null,
-
-              onClick: (e) => {
-                e.cancelBubble = true;
-                setSelectedId(shape.shapeId);
-              },
-
+              onClick: (e) => { e.cancelBubble = true; setSelectedId(shape.shapeId); },
+              onTap: (e) => { e.cancelBubble = true; setSelectedId(shape.shapeId); },
               onDragEnd: (e) => {
-                const updated = {
-                  ...shape,
-                  x: e.target.x(),
-                  y: e.target.y(),
-                };
-                updateShape(updated);
+                updateShape({ ...shape, x: e.target.x(), y: e.target.y() });
               },
-
-              // 🔥 TRANSFORMER FIX
               onTransformEnd: (e) => {
-                const node =  e.target;
-
+                const node = e.target;
                 const scaleX = node.scaleX();
                 const scaleY = node.scaleY();
-
                 const updated = {
                   ...shape,
                   x: node.x(),
                   y: node.y(),
-                  width: shape.width
-                    ? Math.max(5, shape.width * scaleX)
-                    : undefined,
-                  height: shape.height
-                    ? Math.max(5, shape.height * scaleY)
-                    : undefined,
-                  radius: shape.radius
-                    ? shape.radius * scaleX
-                    : undefined,
-                     rotation: node.rotation(), // 🔥 THIS IS THE KEY LINE
+                  width: shape.width ? Math.max(5, shape.width * scaleX) : undefined,
+                  height: shape.height ? Math.max(5, shape.height * scaleY) : undefined,
+                  radius: shape.radius ? shape.radius * scaleX : undefined,
+                  rotation: node.rotation(),
                 };
-
-                // reset scale (VERY IMPORTANT)
                 node.scaleX(1);
                 node.scaleY(1);
-
                 updateShape(updated);
               },
             };
-
-            if (shape.type === "rect") {
-                const rectProps = {
-                    x: shape.x,
-                    y: shape.y,
-                    width: shape.width,
-                    height: shape.height,
-                    fill: shape.fill,
-                    rotation: shape.rotation || 0, // 🔥
-                };
-              return <Rect  key={shape.shapeId} {...rectProps} {...commonProps} />;
-            }
-
-            if (shape.type === "circle") {
-                const circleProps = {
-                    x: shape.x,
-                    y: shape.y,
-                    radius: shape.radius,
-                    fill: shape.fill,
-                    rotation: shape.rotation || 0, // 🔥
-                };
-              return (
-                <Circle
-                    key={shape.shapeId}
-                   {...circleProps}
-                  {...commonProps}
-                />
-              );
-            }
-
-            if (shape.type === "line") {
-                const lineProps = {
-                    points: shape.points,
-                    stroke: shape.stroke || "black",
-                    rotation: shape.rotation || 0, // 🔥
-                    strokeWidth: shape.strokeWidth || 3,
-                };
-              return (
-                <Line
-                    key={shape.shapeId}
-                  {...lineProps}
-                  {...commonProps}
-                  onDragEnd={(e) => {
-                    const node = e.target;
-                    const dx = node.x();
-                    const dy = node.y();
-
-                    const newPoints = shape.points.map((p, i) =>
-                      i % 2 === 0 ? p + dx : p + dy
-                    );
-
-                    node.position({ x: 0, y: 0 });
-
-                    updateShape({
-                      ...shape,
-                      points: newPoints,
-                    });
-                  }}
-                />
-              );
-            }
-          })}
-
-          {/* Preview */}
-          {newShape &&
-            (newShape.type === "line" ? (
-              <Line {...newShape} />
-            ) : newShape.type === "circle" ? (
-              <Circle
-                key={newShape.shapeId}
-                x={newShape.x}
-                y={newShape.y}
-                radius={newShape.radius}
-                fill={newShape.fill}
+ 
+            if (shape.type === "rect") return (
+              <Rect key={shape.shapeId}
+                x={shape.x} y={shape.y}
+                width={shape.width} height={shape.height}
+                fill={shape.fill} rotation={shape.rotation || 0}
+                {...commonProps}
               />
+            );
+ 
+            if (shape.type === "circle") return (
+              <Circle key={shape.shapeId}
+                x={shape.x} y={shape.y}
+                radius={shape.radius} fill={shape.fill}
+                rotation={shape.rotation || 0}
+                {...commonProps}
+              />
+            );
+ 
+            if (shape.type === "line") return (
+              <Line key={shape.shapeId}
+                points={shape.points}
+                stroke={shape.stroke || "#FFFFFF"}
+                rotation={shape.rotation || 0}
+                strokeWidth={shape.strokeWidth || 3}
+                {...commonProps}
+                onDragEnd={(e) => {
+                  const node = e.target;
+                  const dx = node.x(), dy = node.y();
+                  const newPoints = shape.points.map((p, i) => i % 2 === 0 ? p + dx : p + dy);
+                  node.position({ x: 0, y: 0 });
+                  updateShape({ ...shape, points: newPoints });
+                }}
+              />
+            );
+ 
+            return null;
+          })}
+ 
+          {/* Preview */}
+          {newShape && (
+            newShape.type === "line" ? (
+              <Line {...newShape} stroke={newShape.stroke || "#FFFFFF"} />
+            ) : newShape.type === "circle" ? (
+              <Circle x={newShape.x} y={newShape.y} radius={newShape.radius} fill={newShape.fill} />
             ) : (
               <Rect {...newShape} />
-            ))}
-
-          {/* Transformer */}
+            )
+          )}
+ 
           {selectedId && <Transformer ref={trRef} />}
+ 
         </Layer>
       </Stage>
     </div>

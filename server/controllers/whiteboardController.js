@@ -105,7 +105,9 @@ exports.getInvitedWhiteboards = async (req, res) => {
 
     const boards = await Whiteboard.find({
         collaborators: userId ,
-    }).sort({ createdAt: -1 });
+    })
+    .sort({ createdAt: -1 })
+    .populate("owner", "name email");
 
     return res.status(200).json({
       boards,
